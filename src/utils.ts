@@ -1,8 +1,6 @@
 import path from "path"
 import {NodeKind, SourceKind, CommonFlags, DeclarationStatement, Source, Node, ASTBuilder} from "assemblyscript"
 
-
-
 const FILECOIN_DECORATOR = "filecoinBindgen";
 
 export function filecoinFiles(sources: Source[]){
@@ -61,7 +59,7 @@ export function importsInvoke(): string{
 
 export function createInvoke(): string{
     const baseFunc = `
-    export function invoke(_: u32): u32 {
+    export function invoke(paramsID: u32): u32 {
 
       // Read invoked method number
       const methodNum = u32(methodNumber())
@@ -74,14 +72,14 @@ export function createInvoke(): string{
           if( !isConstructorCaller() ) return NO_DATA_BLOCK_ID
           
           // Call constructor func.
-          init()
+          init(paramsID)
           
           // Return no data
           return NO_DATA_BLOCK_ID
          
         // If the method number is not implemented, an error should be retrieved
         default:
-          const result = mappingMethods(methodNum)
+          const result = mappingMethods(methodNum, paramsID)
           if(result >= 0){
             return u32(result)
           } else {

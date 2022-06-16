@@ -14,22 +14,31 @@ export class Builder{
         if(isFilecoinFile) {
             let invokeFunc = getInvokeFunc()
             let invokeCustomMethods = ""
-            let counter = 1
+            const indexesUsed: {[key:string]: boolean} = {}
 
             let sourceText = source.statements.map((stmt) => {
                 if (isFunction(stmt)) {
                     const _stmt = stmt as FunctionDeclaration
+                    const decorator = _stmt.decorators ? _stmt.decorators.find(dec => toString(dec.name) == "export_method") : undefined
+                    if (decorator) {
+                        const args = decorator.args
 
-                    if (
-                            _stmt.decorators
-                        &&  _stmt.decorators.some(dec => toString(dec.name) == "filecoinmethod")
-                    ) {
+                        if(!args
+                            || args.length > 1
+                            || isNaN(parseInt(toString(args[0])))
+                        ) throw new Error("export_method decorator requires only one integer value as argument")
+
+                        const indexStr = toString(args[0])
+                        if(parseInt(indexStr) < 2) throw new Error("export_method decorator index should be higher than 1")
+                        if(indexesUsed[indexStr]) throw new Error(`export_method decorator index ${indexStr} is duplicated`)
+
+                        indexesUsed[indexStr] = true
+
                         const isVoid = toString(_stmt.signature.returnType) === "void"
                         const callSignature = `${_stmt.name.text}(paramsID)`
-                        counter++
 
                         invokeCustomMethods += `
-                            case ${counter}:
+                            case ${indexStr}:
                                 ${ isVoid 
                                     ? `${callSignature}
                                         return NO_DATA_BLOCK_ID`

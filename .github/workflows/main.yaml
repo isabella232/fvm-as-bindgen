@@ -25,4 +25,6 @@ jobs:
       - name: Install dependencies
         run: yarn install
       - name: Build package
-        run: yarn build
+        run: |
+          yarn build
+          ls -la ./dist

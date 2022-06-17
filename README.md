@@ -1,4 +1,7 @@
 # FVM AssemblyScript Bindgen
+[![License](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+[![GithubActions](https://github.com/Zondax/fvm-as-bindgen/actions/workflows/main.yaml/badge.svg)](https://github.com/Zondax/fvm-as-bindgen/blob/master/.github/workflows/main.yaml)
+
 
 ## Goal 
 This projects aims to abstract as much fvm-related logic as it could from used-defined smart contracts in Filecoin network.

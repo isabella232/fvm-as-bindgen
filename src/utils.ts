@@ -2,6 +2,7 @@ import path from "path"
 import {NodeKind, SourceKind, CommonFlags, DeclarationStatement, Source, Node, ASTBuilder} from "assemblyscript"
 
 const FILECOIN_DECORATOR = "filecoinBindgen";
+export const VALID_RETURN_TYPES = ["void", "Uint8Array"]
 
 export function filecoinFiles(sources: Source[]){
     return sources.filter(hasFilecoinDecorator)
@@ -55,8 +56,8 @@ export function posixRelativePath(from: string, to: string): string {
 
 export function importsInvoke(): string{
     return `
-        import {NO_DATA_BLOCK_ID} from "@zondax/fvm-as-sdk/assembly/env";
-        import {methodNumber, usrUnhandledMsg} from "@zondax/fvm-as-sdk/assembly/wrappers";
+        import {NO_DATA_BLOCK_ID, DAG_CBOR} from "@zondax/fvm-as-sdk/assembly/env";
+        import {methodNumber, usrUnhandledMsg, create} from "@zondax/fvm-as-sdk/assembly/wrappers";
         import {isConstructorCaller} from "@zondax/fvm-as-sdk/assembly/helpers";
     `
 }
@@ -89,14 +90,6 @@ export function getInvokeFunc(): string{
                 return NO_DATA_BLOCK_ID
           }
         }
-        `
-
-    return baseFunc
-}
-
-
-export function createInvokeEndFunc(): string{
-    const baseFunc = `
         `
 
     return baseFunc

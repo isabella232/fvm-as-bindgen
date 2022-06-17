@@ -1,9 +1,6 @@
 import { Source, FunctionDeclaration } from "assemblyscript"
 import {
-    importsInvoke,
-    toString,
-    isFunction,
-    getInvokeFunc
+    importsInvoke, toString, isFunction, getInvokeFunc, VALID_RETURN_TYPES
 } from "./utils.js";
 
 export class Builder{
@@ -34,16 +31,19 @@ export class Builder{
 
                         indexesUsed[indexStr] = true
 
-                        const isVoid = toString(_stmt.signature.returnType) === "void"
+                        const returnTypeStr = toString(_stmt.signature.returnType)
+                        if( !VALID_RETURN_TYPES.includes(returnTypeStr) )
+                            throw new Error(`exported method has an invalid return type [${returnTypeStr}] --> options: [${VALID_RETURN_TYPES.join(",")}]`)
+
                         const callSignature = `${_stmt.name.text}(paramsID)`
 
                         invokeCustomMethods += `
                             case ${indexStr}:
-                                ${ isVoid 
+                                ${ returnTypeStr == "void" 
                                     ? `${callSignature}
                                         return NO_DATA_BLOCK_ID`
                                     : `const result = ${callSignature}
-                                        return result`
+                                        return create(DAG_CBOR, result)`
                                 }
                         `
                     }

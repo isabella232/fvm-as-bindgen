@@ -52,7 +52,7 @@ export class Builder{
                         _stmt.decorators
                         &&  _stmt.decorators.some(dec => toString(dec.name) == "constructor")
                     ) {
-                        invokeFunc = invokeFunc.replace("__constructor-name-func__", _stmt.name.text)
+                        invokeFunc = invokeFunc.replace("__constructor-func__", `${_stmt.name.text}(paramsID)`)
                     }
                 }
 

@@ -77,7 +77,7 @@ export function getInvokeFunc(): string{
               if( !isConstructorCaller() ) return NO_DATA_BLOCK_ID
               
               // Call constructor func.
-              __constructor-name-func__(paramsID)
+              __constructor-func__
               
               // Return no data
               return NO_DATA_BLOCK_ID

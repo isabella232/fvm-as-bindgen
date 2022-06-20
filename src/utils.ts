@@ -57,7 +57,7 @@ export function posixRelativePath(from: string, to: string): string {
 export function importsInvoke(): string{
     return `
         import {NO_DATA_BLOCK_ID, DAG_CBOR} from "@zondax/fvm-as-sdk/assembly/env";
-        import {methodNumber, usrUnhandledMsg, create} from "@zondax/fvm-as-sdk/assembly/wrappers";
+        import {methodNumber, usrUnhandledMsg, create, paramsRaw} from "@zondax/fvm-as-sdk/assembly/wrappers";
         import {isConstructorCaller} from "@zondax/fvm-as-sdk/assembly/helpers";
     `
 }
@@ -75,6 +75,8 @@ export function getInvokeFunc(): string{
               // The caller of this method should be always the same.
               // Nobody else should call the constructor
               if( !isConstructorCaller() ) return NO_DATA_BLOCK_ID
+              
+              const params = paramsRaw(paramsID)
               
               // Call constructor func.
               __constructor-func__

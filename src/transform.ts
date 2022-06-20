@@ -63,7 +63,7 @@ export class MyTransform extends Transform {
             );
 
             // Build new Source
-            let [sourceText, isFilecoinFound] = Builder.build(source);
+            let [sourceText, isFilecoinFound] = new Builder().build(source);
 
             if(isFilecoinFound) filecoinDecoratorFound = true
 

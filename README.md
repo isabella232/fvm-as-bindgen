@@ -16,8 +16,35 @@ yarn build
 ```
 
 ## How to use it
-In other to identify the file the transformation should work on, users will need to add `// @filecoinfile` comment at the very beginning of the 
-index file. 
+These are a series of decorators you should set on your smart contract in order to tag files, functions and classes
+the package will process.
+
+- On the top of the index file
+```
+// @chainfile-index
+```
+- On the top of the state file 
+```
+// @chainfile-state
+```
+- Use to indicate which class should be used as smart contract state
+```
+// @ts-ignore
+@state
+```
+- Use to indicate the function that will be executed on smart contract instantiation
+
+```
+// @ts-ignore
+@constructor
+```
+
+- Use to indicate functions that will be exported so that they can be called from the outside world
+- They will be set as method to be invoked.
+```
+// @ts-ignore
+@export_method()
+```
 
 ## Foundational projects
 Packages used to build this lib:

@@ -1,16 +1,16 @@
-const letters = ["a","b","c","d","e","f","g","h","i","j","k"]
+const letters = ["a","b","c","d","e","f","g","h","i","j","k","l","m","n","o","p","q","r","s"]
 
 export function decode(className: string, fields: string[]){
     const result: string[] = []
     result.push(`protected parse(raw: Value): ${className} {`)
-    result.push(`if( !raw.isObj ) throw new Error("raw state should be an object")`)
-    result.push(`let state = raw as Obj`)
+    result.push(`if( !raw.isArr ) throw new Error("raw state should be an array")`)
+    result.push(`let state = (raw as Arr).valueOf()`)
 
     const fieldsForState: string[] = []
-    fields.forEach( field => {
+    fields.forEach( (field, index) => {
         const [name, typeAndDefault] = field.split(":")
         const [type, defaultVal] = typeAndDefault.split("=")
-        decodeTypes(result, "object","state", name.trim(), type.trim(), "")
+        decodeTypes(result, "array","state", name.trim(), type.trim(), index.toString())
 
         fieldsForState.push(name.trim())
     })
@@ -21,9 +21,9 @@ export function decode(className: string, fields: string[]){
     return result
 }
 
-export function decodeTypes(result: string[], parentType: string, parentName:string, fieldName: string, fieldType: string, indexName: string){
+export function decodeTypes(result: string[], parentType: string, parentName:string, fieldName: string, fieldType: string, rootIndex: string){
 
-        const translated = translateBasicTypes(parentName, parentType, fieldName, fieldType, false);
+        const translated = translateBasicTypes(parentName, parentType, rootIndex, fieldType, false);
         if( translated != "" ) {
             result.push(`let ${fieldName} = ${translated}`)
             return
@@ -32,11 +32,11 @@ export function decodeTypes(result: string[], parentType: string, parentName:str
         if( fieldType.startsWith("Array") ){
             const elementType = fieldType.split("<")[1].split(">")[0]
 
-            let accessor = getAccessor(parentName, parentType, fieldName, false)
+            let accessor = getAccessor(parentName, parentType, rootIndex || fieldName, false)
             result.push(`let ${fieldName}_raw = (${accessor} as Arr).valueOf()`)
             result.push(`let ${fieldName} = new Array<${elementType}>()`)
 
-            let newIndex = getNewIndexLetter(result, indexName)
+            let newIndex = getNewIndexLetter(result, fieldName)
             result.push(`for(let ${newIndex} = 0; ${newIndex} < ${fieldName}.length; ${newIndex}++){`)
             result.push(`${fieldName}.push(${translateBasicTypes(`${fieldName}_raw`, "array", newIndex, elementType, true)})`)
             result.push(`}`)
@@ -48,12 +48,12 @@ export function decodeTypes(result: string[], parentType: string, parentName:str
             keyType = keyType.trim()
             valueType = valueType.trim()
 
-            let accessor = getAccessor(parentName, parentType, fieldName, false)
+            let accessor = getAccessor(parentName, parentType, rootIndex || fieldName, false)
             result.push(`let ${fieldName}_raw = (${accessor} as Obj).valueOf()`)
             result.push(`let ${fieldName}_keys =  ${fieldName}_raw.keys()`)
             result.push(`let ${fieldName} = new Map<${keyType}, ${valueType}>()`)
 
-            let newIndex = getNewIndexLetter(result, indexName)
+            let newIndex = getNewIndexLetter(result, fieldName)
             result.push(`for(let ${newIndex} = 0; ${newIndex} < ${fieldName}_keys.length; ${newIndex}++){`)
             result.push(`let key = ${fieldName}_keys.at(${newIndex}).toString()`)
             result.push(`${fieldName}.set(key, ${translateBasicTypes(`${fieldName}_raw`, "object", "key", valueType, true)})`)

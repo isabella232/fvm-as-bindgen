@@ -4,12 +4,11 @@ export function encode(fields: string[]){
     const result: string[] = []
     result.push("protected encode(): ArrayBuffer {")
     result.push("const encoder = new CBOREncoder();")
-    result.push(`encoder.addObject(${fields.length})`)
+    result.push(`encoder.addArray(${fields.length})`)
 
     fields.forEach( field => {
         const [name, typeAndDefault] = field.split(":")
         const [type, defaultVal] = typeAndDefault.split("=")
-        result.push(`encoder.addKey("${name.trim()}")`)
         encodeTypes(result, type.trim(), name.trim(), "","")
     })
 

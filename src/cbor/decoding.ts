@@ -114,9 +114,11 @@ function translateBasicTypes( parentName:string, parentType: string, fieldName: 
         case "boolean":
             return `(${accessor} as Boolean).valueOf()`
 
-
         case "null":
             return `(${accessor} as Null).valueOf()`
+
+        case "Uint8Array":
+            return `(${accessor} as Bytes).valueOf()`
 
         default:
             return ""

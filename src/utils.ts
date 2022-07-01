@@ -63,7 +63,7 @@ export function importsInvoke(): string{
         import {methodNumber, usrUnhandledMsg, create, paramsRaw} from "@zondax/fvm-as-sdk/assembly/wrappers";
         import {isConstructorCaller} from "@zondax/fvm-as-sdk/assembly/helpers";
         import {decodeParamsRaw} from "@zondax/fvm-as-sdk/assembly/utils/params";
-        import {Value, Arr, Str, Integer, Obj, Float} from "@zondax/assemblyscript-cbor/assembly/types"
+        import {Value, Arr, Str, Integer, Obj, Float, Bytes} from "@zondax/assemblyscript-cbor/assembly/types"
     `
 }
 

@@ -77,6 +77,10 @@ export function encodeTypes(result: string[], type: string, fieldName: string, i
             result.push(`encoder.addNull(${fieldAccessor}${index})`)
             break
 
+        case "Uint8Array":
+            result.push(`encoder.addBytes(${fieldAccessor}${index})`)
+            break
+
         default:
             if( type.startsWith("Array") ){
                 const arrayType = type.split("<")[1].split(">")[0]

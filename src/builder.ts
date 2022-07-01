@@ -2,10 +2,11 @@ import { Source, FunctionDeclaration, ClassDeclaration, FieldDeclaration } from 
 import {
     importsInvoke, toString, isFunction, isClass, getInvokeFunc, VALID_RETURN_TYPES, isField, isMethod
 } from "./utils.js";
-import {encode, getCborEncode} from "./cbor/encoding.js";
+import {encode} from "./cbor/encoding.js";
 import {constructorFunc, staticFuncs, getStateFunc} from "./state/index.js";
 import {decode} from "./cbor/decoding.js";
 import {getReturnParser} from "./return/index.js";
+import {getParamsDecodeLines} from "./params/index.js";
 
 export class Builder{
     sb: string[]
@@ -47,15 +48,12 @@ export class Builder{
 
                     indexesUsed[indexStr] = true
 
-                    if( _stmt.signature.parameters.length != 1 )
-                        throw new Error(`exported method has an invalid arguments amount. Only a ParamsRawResult is allowed`)
-
-                    if( toString(_stmt.signature.parameters[0].type) != "ParamsRawResult" )
-                        throw new Error(`exported method has an invalid argument type [${toString(_stmt.signature.parameters[0].type)}] --> valid one: [ParamsRawResult]`)
-
                     const funcCall = `__wrapper_${_stmt.name.text}(paramsID)`
                     const funcSignature = `__wrapper_${_stmt.name.text}(paramsID: u32)`
                     const returnCall = `__encodeReturn_${_stmt.name.text}`
+
+                    const paramFields = _stmt.signature.parameters.map(field => toString(field))
+                    const paramsParserLines = getParamsDecodeLines(paramFields)
 
                     const returnTypeStr = toString(_stmt.signature.returnType)
 
@@ -67,8 +65,9 @@ export class Builder{
 
                             this.sb.push(`
                                 function ${funcSignature}:void {
-                                    const params = paramsRaw(paramsID)
-                                    ${_stmt.name.text}(params)
+                                    const decoded = decodeParamsRaw(paramsRaw(paramsID))
+                                    ${paramsParserLines[0].join("\n")}
+                                    ${_stmt.name.text}(${paramsParserLines[1].join(",")})
                                 }
                             `)
                             break
@@ -78,8 +77,10 @@ export class Builder{
 
                             this.sb.push(`
                                 function ${funcSignature}:Uint8Array {
-                                    const params = paramsRaw(paramsID)
-                                    const result = ${_stmt.name.text}(params)
+                                    const decoded = decodeParamsRaw(paramsRaw(paramsID))
+                                    ${paramsParserLines[0].join("\n")}
+                                    
+                                    const result = ${_stmt.name.text}(${paramsParserLines[1].join(",")})
                                     
                                     return ${returnCall}(result) 
                                 }
@@ -94,7 +95,15 @@ export class Builder{
                     _stmt.decorators
                     &&  _stmt.decorators.some(dec => toString(dec.name) == "constructor")
                 ) {
-                    this.sb[0] = this.sb[0].replace("__constructor-func__", `${_stmt.name.text}(params)`)
+
+                    const paramFields = _stmt.signature.parameters.map(field => toString(field))
+                    const paramsParserLines = getParamsDecodeLines(paramFields)
+                    const newLines = `
+                        ${paramsParserLines[0].join("\n")}
+                        ${_stmt.name.text}(${paramsParserLines[1].join(",")})
+                    `
+
+                    this.sb[0] = this.sb[0].replace("__constructor-func__", newLines)
                 }
             }
             return toString(stmt);

@@ -1,25 +1,32 @@
 const letters = ["a","b","c","d","e","f","g","h","i","j","k"]
 
 export function encode(fields: string[]){
-    const result: string[] = []
+    let result: string[] = []
     result.push("protected encode(): ArrayBuffer {")
-    result.push("const encoder = new CBOREncoder();")
-    result.push(`encoder.addArray(${fields.length})`)
-
-    fields.forEach( field => {
-        const [name, typeAndDefault] = field.split(":")
-        const [type, defaultVal] = typeAndDefault.split("=")
-        encodeTypes(result, type.trim(), name.trim(), "","")
-    })
-
+    result = result.concat(getCborEncode(fields, true))
     result.push("return encoder.serialize()")
     result.push("}")
 
     return result
 }
 
-export function encodeTypes(result: string[], type: string, fieldName: string, indexType: string, indexName: string){
+export function getCborEncode(fields: string[], isClass: boolean): string[]{
+    const result: string[] = []
+    result.push("const encoder = new CBOREncoder();")
+    result.push(`encoder.addArray(${fields.length})`)
+
+    fields.forEach( field => {
+        const [name, typeAndDefault] = field.split(":")
+        const [type, defaultVal] = typeAndDefault.split("=")
+        encodeTypes(result, type.trim(), name.trim(), isClass, "","")
+    })
+
+    return result
+}
+
+export function encodeTypes(result: string[], type: string, fieldName: string, isClass: boolean, indexType: string, indexName: string){
     let index;
+    let fieldAccessor = `${isClass ? "this." : ""}${fieldName}`;
     switch (indexType){
         case "array":
             index =`[${indexName}]`
@@ -32,6 +39,8 @@ export function encodeTypes(result: string[], type: string, fieldName: string, i
             break
     }
 
+
+
     let _type;
     switch (type){
         case "u64":
@@ -39,7 +48,7 @@ export function encodeTypes(result: string[], type: string, fieldName: string, i
         case "u16":
         case "u8":
             _type = type.replace("u", "")
-            result.push(`encoder.addUint${_type}(this.${fieldName}${index})`)
+            result.push(`encoder.addUint${_type}(${fieldAccessor}${index})`)
             break
 
         case "i64":
@@ -47,35 +56,35 @@ export function encodeTypes(result: string[], type: string, fieldName: string, i
         case "i16":
         case "i8":
             _type = type.replace("i", "")
-            result.push(`encoder.addInt${_type}(this.${fieldName}${index})`)
+            result.push(`encoder.addInt${_type}(${fieldAccessor}${index})`)
             break
 
         case "f64":
         case "f32":
             _type = type.replace("f", "")
-            result.push(`encoder.addF${_type}(this.${fieldName}${index})`)
+            result.push(`encoder.addF${_type}(${fieldAccessor}${index})`)
             break
 
         case "string":
-            result.push(`encoder.addString(this.${fieldName}${index})`)
+            result.push(`encoder.addString(${fieldAccessor}${index})`)
             break
 
         case "boolean":
-            result.push(`encoder.addBoolean(this.${fieldName}${index})`)
+            result.push(`encoder.addBoolean(${fieldAccessor}${index})`)
             break
 
         case "null":
-            result.push(`encoder.addNull(this.${fieldName}${index})`)
+            result.push(`encoder.addNull(${fieldAccessor}${index})`)
             break
 
         default:
             if( type.startsWith("Array") ){
                 const arrayType = type.split("<")[1].split(">")[0]
 
-                result.push(`encoder.addArray(this.${fieldName}.length)`)
+                result.push(`encoder.addArray(${fieldAccessor}.length)`)
                 let newIndex = getNewIndexLetter(result, indexName)
-                result.push(`for(let ${newIndex} = 0; ${newIndex} < this.${fieldName}.length; ${newIndex}++){`)
-                encodeTypes(result, arrayType, fieldName, "array", newIndex)
+                result.push(`for(let ${newIndex} = 0; ${newIndex} < ${fieldAccessor}.length; ${newIndex}++){`)
+                encodeTypes(result, arrayType, fieldName, isClass, "array", newIndex)
                 result.push(`}`)
                 return
             }
@@ -84,18 +93,18 @@ export function encodeTypes(result: string[], type: string, fieldName: string, i
                 const [keyType, valueType] = type.split("<")[1].split(">")[0].split(",")
 
                 let newIndex = getNewIndexLetter(result, indexName)
-                result.push(`let keys_${newIndex} = this.${fieldName}.keys()`)
+                result.push(`let keys_${newIndex} = ${fieldAccessor}.keys()`)
 
                 result.push(`encoder.addObject(keys_${newIndex}.length)`)
 
                 result.push(`for(let ${newIndex} = 0; ${newIndex} < keys_${newIndex}.length; ${newIndex}++){`)
                 result.push(`encoder.addKey(keys_${newIndex}[${newIndex}].toString())`)
-                encodeTypes(result, valueType.trim(), fieldName, "map", `keys_${newIndex}[${newIndex}]`)
+                encodeTypes(result, valueType.trim(), fieldName, isClass, "map", `keys_${newIndex}[${newIndex}]`)
                 result.push(`}`)
                 return
             }
 
-            throw new Error(`type ${type} is not supported for encoding`)
+            throw new Error(`type [${type}] is not supported for encoding`)
     }
 }
 

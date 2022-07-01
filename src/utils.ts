@@ -58,6 +58,7 @@ export function posixRelativePath(from: string, to: string): string {
 
 export function importsInvoke(): string{
     return `
+        import {CBOREncoder} from "@zondax/assemblyscript-cbor/assembly";
         import {NO_DATA_BLOCK_ID, DAG_CBOR} from "@zondax/fvm-as-sdk/assembly/env";
         import {methodNumber, usrUnhandledMsg, create, paramsRaw} from "@zondax/fvm-as-sdk/assembly/wrappers";
         import {isConstructorCaller} from "@zondax/fvm-as-sdk/assembly/helpers";

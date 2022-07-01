@@ -106,6 +106,6 @@ export class MyTransform extends Transform {
             parser.sources.push(newSource);
         });
 
-        if(!chainDecoratorFound) throw new Error(`chain decorator is missing. Please add "// @indexfile" once at the very beginning of the index file.`)
+        if(!chainDecoratorFound) throw new Error(`chain decorator is missing. Please add "// @chainfile-index" once at the very beginning of the index file.`)
     }
 }

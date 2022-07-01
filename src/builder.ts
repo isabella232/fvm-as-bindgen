@@ -2,9 +2,10 @@ import { Source, FunctionDeclaration, ClassDeclaration, FieldDeclaration } from 
 import {
     importsInvoke, toString, isFunction, isClass, getInvokeFunc, VALID_RETURN_TYPES, isField, isMethod
 } from "./utils.js";
-import {encode} from "./cbor/encoding.js";
-import {constructorFunc, staticFuncs, getStateFunc} from "./state/code.js";
+import {encode, getCborEncode} from "./cbor/encoding.js";
+import {constructorFunc, staticFuncs, getStateFunc} from "./state/index.js";
 import {decode} from "./cbor/decoding.js";
+import {getReturnParser} from "./return/index.js";
 
 export class Builder{
     sb: string[]
@@ -46,10 +47,6 @@ export class Builder{
 
                     indexesUsed[indexStr] = true
 
-                    const returnTypeStr = toString(_stmt.signature.returnType)
-                    if( !VALID_RETURN_TYPES.includes(returnTypeStr) )
-                        throw new Error(`exported method has an invalid return type [${returnTypeStr}] --> options: [${VALID_RETURN_TYPES.join(",")}]`)
-
                     if( _stmt.signature.parameters.length != 1 )
                         throw new Error(`exported method has an invalid arguments amount. Only a ParamsRawResult is allowed`)
 
@@ -58,6 +55,9 @@ export class Builder{
 
                     const funcCall = `__wrapper_${_stmt.name.text}(paramsID)`
                     const funcSignature = `__wrapper_${_stmt.name.text}(paramsID: u32)`
+                    const returnCall = `__encodeReturn_${_stmt.name.text}`
+
+                    const returnTypeStr = toString(_stmt.signature.returnType)
 
                     invokeCustomMethods.push(`case ${indexStr}:`)
                     switch (returnTypeStr){
@@ -72,19 +72,20 @@ export class Builder{
                                 }
                             `)
                             break
-                        case "Uint8Array":
+                        default:
                             invokeCustomMethods.push(`const result = ${funcCall}`)
                             invokeCustomMethods.push(`return create(DAG_CBOR, result)`)
 
                             this.sb.push(`
                                 function ${funcSignature}:Uint8Array {
                                     const params = paramsRaw(paramsID)
-                                    return ${_stmt.name.text}(params)
+                                    const result = ${_stmt.name.text}(params)
+                                    
+                                    return ${returnCall}(result) 
                                 }
+                                ${getReturnParser(returnCall, "result", returnTypeStr)}
                             `)
                             break
-                        default:
-                            throw new Error(`exported method has an invalid return type [${returnTypeStr}] --> options: [${VALID_RETURN_TYPES.join(",")}]`)
                     }
 
                 }

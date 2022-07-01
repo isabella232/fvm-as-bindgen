@@ -61,7 +61,7 @@ export function decodeTypes(result: string[], parentType: string, parentName:str
             return
         }
 
-        throw new Error(`type ${fieldType} is not supported for decoding`)
+        throw new Error(`type [${fieldType}] is not supported for decoding`)
 }
 
 function getNewIndexLetter(result: string[], currentLetter: string){

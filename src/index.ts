@@ -1,3 +1,3 @@
-import { MyTransform } from "./transform.js";
+import { TransformFVM } from './transform.js'
 
-export default MyTransform;
+export default TransformFVM

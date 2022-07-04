@@ -1,20 +1,5 @@
 const letters = ["a","b","c","d","e","f","g","h","i","j","k","l","m","n","o","p","q","r","s"]
 
-export function decode(className: string, fields: string[]){
-    let result: string[] = []
-    result.push(`protected parse(raw: Value): ${className} {`)
-    result.push(`if( !raw.isArr ) throw new Error("raw state should be an array")`)
-    result.push(`let state = (raw as Arr).valueOf()`)
-
-    const [extraLines, fieldsForState] = getCborDecode(fields, "state")
-    result = result.concat(extraLines)
-
-    result.push(`return new State(${fieldsForState.join(",")})`)
-    result.push("}")
-
-    return result
-}
-
 export function getCborDecode(fields: string[], entryFieldName: string): string[][]{
     const result: string[] = []
 

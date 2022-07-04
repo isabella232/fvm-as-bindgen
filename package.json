@@ -9,11 +9,12 @@
   },
   "devDependencies": {
     "@types/node": "^18.0.0",
+    "prettier": "^2.7.1",
     "typescript": "^4.7.3"
   },
   "scripts": {
     "build": "tsc",
-    "build:fix_transform": "find dist/. -type f -maxdepth 1 -name '*.*' -exec sed -i 's/\"assemblyscript\\/asc\"/\"assemblyscript\\/transform\"/g' {} +",
+    "build:fix_transform": "find dist/. -type f -maxdepth 1 -name '*.*' -exec sed -i \"s/'assemblyscript\\/asc'/'assemblyscript\\/transform'/\" {} +",
     "postbuild": "yarn build:fix_transform"
   },
   "author": "Zondax AG",

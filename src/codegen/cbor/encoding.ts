@@ -1,15 +1,5 @@
 const letters = ["a","b","c","d","e","f","g","h","i","j","k"]
 
-export function encode(fields: string[]){
-    let result: string[] = []
-    result.push("protected encode(): ArrayBuffer {")
-    result = result.concat(getCborEncode(fields, true))
-    result.push("return encoder.serialize()")
-    result.push("}")
-
-    return result
-}
-
 export function getCborEncode(fields: string[], isClass: boolean): string[]{
     const result: string[] = []
     result.push("const encoder = new CBOREncoder();")

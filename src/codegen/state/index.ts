@@ -1,3 +1,31 @@
+import {getCborDecode} from "../cbor/decoding.js";
+import {getCborEncode} from "../cbor/encoding.js";
+
+export function decode(className: string, fields: string[]){
+    let result: string[] = []
+    result.push(`protected parse(raw: Value): ${className} {`)
+    result.push(`if( !raw.isArr ) throw new Error("raw state should be an array")`)
+    result.push(`let state = (raw as Arr).valueOf()`)
+
+    const [extraLines, fieldsForState] = getCborDecode(fields, "state")
+    result = result.concat(extraLines)
+
+    result.push(`return new State(${fieldsForState.join(",")})`)
+    result.push("}")
+
+    return result
+}
+
+export function encode(fields: string[]){
+    let result: string[] = []
+    result.push("protected encode(): ArrayBuffer {")
+    result = result.concat(getCborEncode(fields, true))
+    result.push("return encoder.serialize()")
+    result.push("}")
+
+    return result
+}
+
 export const getStateFunc = (stateClassName: string) => {
     const imports = `
         import {CBOREncoder, CBORDecoder} from "@zondax/assemblyscript-cbor/assembly"

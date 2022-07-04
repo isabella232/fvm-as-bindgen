@@ -23,89 +23,75 @@
  SOFTWARE.
  *********************************************************************************/
 
-import { Transform } from "assemblyscript/asc"
-import { Parser, Source } from "assemblyscript"
+import { Transform } from 'assemblyscript/asc'
+import { Parser, Source } from 'assemblyscript'
 
-import {chainFiles, isEntry, posixRelativePath, toString} from "./utils.js";
-import {Builder} from "./builder.js";
+import { chainFiles } from './codegen/utils.js'
+import { isEntry, posixRelativePath, toString } from './utils.js'
+import { Builder } from './builder.js'
 
-export class MyTransform extends Transform {
-    parser: Parser | undefined;
+export class TransformFVM extends Transform {
+    parser: Parser | undefined
 
-    afterParse(parser: Parser){
-        this.parser = parser;
+    afterParse(parser: Parser) {
+        this.parser = parser
 
-        const writeFile = this.writeFile;
-        const baseDir = this.baseDir;
+        const writeFile = this.writeFile
+        const baseDir = this.baseDir
 
-        let newParser = new Parser(parser.diagnostics);
+        let newParser = new Parser(parser.diagnostics)
 
         let chainDecoratorFound = false
 
         // Filter for smart contract files
-        let files = chainFiles(parser.sources);
+        let files = chainFiles(parser.sources)
 
         // Visit each file
         files.forEach((source) => {
-            if (source.internalPath.includes("index-stub")) return;
-            let writeOut = /\/\/.*@chainfile-.*/.test(source.text);
+            if (source.internalPath.includes('index-stub')) return
+            let writeOut = /\/\/.*@chainfile-.*/.test(source.text)
 
             // Remove current source from logs in parser
-            parser.donelog.delete(source.internalPath);
-            parser.seenlog.delete(source.internalPath);
+            parser.donelog.delete(source.internalPath)
+            parser.seenlog.delete(source.internalPath)
 
             // Remove current source from parser sources
             // @ts-ignore
-            this.parser.sources = this.parser.sources.filter(
-                (_source: Source) => _source !== source
-            );
+            this.parser.sources = this.parser.sources.filter((_source: Source) => _source !== source)
 
             // Remove current source from programs sources
-            this.program.sources = this.program.sources.filter(
-                (_source: Source) => _source !== source
-            );
+            this.program.sources = this.program.sources.filter((_source: Source) => _source !== source)
 
             // Build new Source
-            let [sourceText, isChainFound] = new Builder().build(source);
-            if(isChainFound) chainDecoratorFound = true
+            let [sourceText, isChainFound] = new Builder().build(source)
+            if (isChainFound) chainDecoratorFound = true
 
             if (writeOut) {
-                writeFile(
-                    source.normalizedPath + ".source.out",
-                    sourceText,
-                    baseDir
-                );
+                writeFile(source.normalizedPath + '.source.out', sourceText, baseDir)
             }
 
             // Parses file and any new imports added to the source
-            newParser.parseFile(
-                sourceText,
-                posixRelativePath(isEntry(source) ? "" : "./", source.normalizedPath),
-                isEntry(source)
-            );
+            newParser.parseFile(sourceText, posixRelativePath(isEntry(source) ? '' : './', source.normalizedPath), isEntry(source))
 
             // Get our modified source, now parsed by the new parser
-            let newSource = newParser.sources.pop()!;
+            let newSource = newParser.sources.pop()!
 
             if (writeOut) {
-                writeFile(
-                    source.normalizedPath + ".parsed.out",
-                    toString(newSource),
-                    baseDir
-                );
+                writeFile(source.normalizedPath + '.parsed.out', toString(newSource), baseDir)
             }
 
             // Add new modified source to program sources
-            this.program.sources.push(newSource);
+            this.program.sources.push(newSource)
 
             // Add new modified source to logs in parser
-            parser.donelog.add(source.internalPath);
-            parser.seenlog.add(source.internalPath);
+            parser.donelog.add(source.internalPath)
+            parser.seenlog.add(source.internalPath)
 
             // Add new modified source to parser sources
-            parser.sources.push(newSource);
-        });
+            parser.sources.push(newSource)
+        })
 
-        if(!chainDecoratorFound) throw new Error(`chain decorator is missing. Please add "// @chainfile-index" once at the very beginning of the index file.`)
+        if (!chainDecoratorFound)
+            throw new Error(`chain decorator is missing. Please add "// @chainfile-index" once at the very beginning of the index file.`)
     }
 }

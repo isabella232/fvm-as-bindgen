@@ -1,14 +1,14 @@
 import { Source, FunctionDeclaration, ClassDeclaration, FieldDeclaration, DecoratorNode, Statement } from 'assemblyscript'
 import { toString, isFunction, isClass, isField, isMethod, isEntry } from './utils.js'
 import { getInvokeImports, getInvokeFunc } from './codegen/invoke/index.js'
-import { getStateEncodeFunc, getStateDecodeFunc } from './codegen/state/index.js'
-import { getStateStaticFuncs, getStateImports } from './codegen/state/index.js'
+import { getStateEncodeFunc, getStateDecodeFunc, getStateStaticFuncs } from './codegen/state/index.js'
 import { getReturnParser } from './codegen/return/index.js'
 import { getParamsDecodeLines } from './codegen/params/index.js'
 import { BASE_STATE_LOAD_FUNC, BASE_STATE_SAVE_FUNC } from './codegen/constants.js'
 import { getClassDecodeFunc, getClassEncodeFunc, getClassStaticFuncs } from './codegen/classes/index.js'
 import { getConstructor } from './codegen/state/utils.js'
 import { isBaseStateClass, isConstructorMethod, isExportMethod, isStateClass } from './codegen/utils.js'
+import { getCborImports } from './codegen/cbor/imports.js'
 
 type IndexesUsed = { [key: string]: boolean }
 
@@ -46,26 +46,22 @@ export class Builder {
 
         this.sb[0] = this.sb[0].replace('__user-methods__', invokeCustomMethods.join('\n'))
 
-        let str = sourceText.concat(this.sb).join('\n')
-        return str
+        return sourceText.concat(this.sb).join('\n')
     }
 
     protected processUserFile(source: Source): string {
-        let importsToAdd: string[] = []
-
         let sourceText = source.statements.map((stmt) => {
             if (!isClass(stmt)) return toString(stmt)
 
             let _stmt = stmt as ClassDeclaration
 
             if (isBaseStateClass(_stmt)) return this.handleBaseStateClass(stmt)
-            if (isStateClass(_stmt)) return this.handleStateClass(stmt, importsToAdd)
+            if (isStateClass(_stmt)) return this.handleStateClass(stmt)
 
             return this.handleCustomClass(_stmt)
         })
 
-        let str = importsToAdd.concat(sourceText.concat(this.sb)).join('\n')
-        return str
+        return this.sb.concat(sourceText).join('\n')
     }
 
     protected handleExportMethod(
@@ -150,11 +146,10 @@ export class Builder {
             }
             return true
         })
-        let classStr = toString(stmt)
-        return classStr
+        return toString(stmt)
     }
 
-    protected handleStateClass(stmt: Statement, importsToAdd: string[]): string {
+    protected handleStateClass(stmt: Statement): string {
         let _stmt = stmt as ClassDeclaration
         // Encode func
         const fields = _stmt.members.filter((mem) => isField(mem)).map((field) => toString(field as FieldDeclaration))
@@ -163,9 +158,8 @@ export class Builder {
         const [constFunc, constSignature] = getConstructor(fields, true)
         const defaultFunc = getStateStaticFuncs(toString(_stmt.name), fields)
 
-        // Base func
-        const imports = getStateImports(toString(_stmt.name))
-        importsToAdd.push(imports)
+        const cborImports = getCborImports(toString(_stmt.name))
+        if (!this.sb.includes(cborImports)) this.sb.push(cborImports)
 
         let classStr = toString(stmt)
         classStr = classStr.slice(0, classStr.lastIndexOf('}'))
@@ -185,6 +179,9 @@ export class Builder {
         const decodeFunc = getClassDecodeFunc(toString(stmt.name), fields).join('\n')
         const staticFunc = getClassStaticFuncs(toString(stmt.name), fields)
         const [constFunc, constSignature] = getConstructor(fields, false)
+
+        const cborImports = getCborImports(toString(stmt.name))
+        if (!this.sb.includes(cborImports)) this.sb.push(cborImports)
 
         stmt.members.map((_mem) => {
             if (isMethod(_mem) && toString(_mem.name) == 'constructor')

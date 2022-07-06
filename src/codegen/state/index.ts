@@ -27,19 +27,6 @@ export function getStateEncodeFunc(fields: string[]) {
     return result
 }
 
-export const getStateImports = (stateClassName: string) => {
-    const imports = `
-        import {CBOREncoder, CBORDecoder} from "@zondax/assemblyscript-cbor/assembly"
-        import {Value, Arr, Str, Integer, Obj, Float, Bytes} from "@zondax/assemblyscript-cbor/assembly/types"
-        
-        import {Cid, DAG_CBOR} from "@zondax/fvm-as-sdk/assembly/env";
-        import {Get, Put, root} from "@zondax/fvm-as-sdk/assembly/helpers";
-        import {setRoot} from "@zondax/fvm-as-sdk/assembly/wrappers";
-    `
-
-    return imports
-}
-
 export const getStateStaticFuncs = (stateClassName: string, fields: string[]): string => {
     const func = `static defaultState(): ${stateClassName} {
         return new ${stateClassName}( __params__ );

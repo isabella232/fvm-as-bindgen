@@ -3,6 +3,8 @@ import { NodeKind, SourceKind, CommonFlags, DeclarationStatement, Source, Node, 
 
 export const isEntry = (source: Source | Node): boolean => source.range.source.sourceKind == SourceKind.USER_ENTRY
 
+export const isUserFile = (source: Source | Node): boolean => source.range.source.sourceKind == SourceKind.USER
+
 export const isClass = (type: Node): boolean => type.kind == NodeKind.CLASSDECLARATION
 
 export const isFunction = (type: Node): boolean => type.kind == NodeKind.FUNCTIONDECLARATION

@@ -3,22 +3,22 @@ import {
     BASE_STATE_DECORATOR,
     CHAIN_FILE_INDEX_DECORATOR,
     CHAIN_FILE_STATE_DECORATOR,
+    CHAIN_FILE_USER_DECORATOR,
     CONSTRUCTOR_DECORATOR,
     EXPORT_METHOD_DECORATOR,
     NOT_CHAIN_FILE_DECORATOR,
     STATE_DECORATOR,
 } from './constants.js'
-import { isEntry, toString } from '../utils.js'
+import { isEntry, isUserFile, toString } from '../utils.js'
 
 export const chainFiles = (sources: Source[]): Source[] => sources.filter(hasChainDecorator)
 export const isIndexChainFile = (src: Source): boolean => src.text.includes(CHAIN_FILE_INDEX_DECORATOR)
 export const isStatusChainFile = (src: Source): boolean => src.text.includes(CHAIN_FILE_STATE_DECORATOR)
+export const isUserChainFile = (src: Source): boolean => src.text.includes(CHAIN_FILE_USER_DECORATOR)
+export const isNotChainFile = (src: Source): boolean => src.text.includes(NOT_CHAIN_FILE_DECORATOR)
 
-function hasChainDecorator(stmt: Source): boolean {
-    const status =
-        (isEntry(stmt) || stmt.text.includes(CHAIN_FILE_INDEX_DECORATOR) || stmt.text.includes(CHAIN_FILE_STATE_DECORATOR) || false) &&
-        !stmt.text.includes(NOT_CHAIN_FILE_DECORATOR)
-    return status
+function hasChainDecorator(src: Source): boolean {
+    return (isEntry(src) || isUserFile(src)) && !isNotChainFile(src)
 }
 
 export const isExportMethod = (_stmt: FunctionDeclaration): DecoratorNode | undefined =>

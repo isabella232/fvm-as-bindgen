@@ -1,12 +1,4 @@
-import {
-    Source,
-    FunctionDeclaration,
-    ClassDeclaration,
-    FieldDeclaration,
-    DecoratorNode,
-    Statement,
-    MethodDeclaration,
-} from 'assemblyscript'
+import { Source, FunctionDeclaration, ClassDeclaration, FieldDeclaration, DecoratorNode, Statement } from 'assemblyscript'
 import { toString, isFunction, isClass, isField, isMethod } from './utils.js'
 import { getInvokeImports, getInvokeFunc } from './codegen/invoke/index.js'
 import { getStateEncodeFunc, getStateDecodeFunc } from './codegen/state/index.js'
@@ -23,6 +15,7 @@ import {
     isIndexChainFile,
     isStateClass,
     isStatusChainFile,
+    isUserChainFile,
 } from './codegen/utils.js'
 
 type IndexesUsed = { [key: string]: boolean }
@@ -36,11 +29,12 @@ export class Builder {
     build(source: Source): [string, boolean] {
         if (isIndexChainFile(source)) return [this.processIndexFile(source), true]
         if (isStatusChainFile(source)) return [this.processStateFile(source), false]
+        if (isUserChainFile(source)) return [this.processUserFile(source), false]
 
         return [toString(source), false]
     }
 
-    private processIndexFile(source: Source): string {
+    protected processIndexFile(source: Source): string {
         this.sb.push(getInvokeFunc())
         this.sb.push(getInvokeImports())
 
@@ -48,8 +42,9 @@ export class Builder {
         const indexesUsed: IndexesUsed = {}
 
         let sourceText = source.statements.map((stmt) => {
-            if (!isFunction(stmt)) return toString(stmt)
+            if (isClass(stmt)) return this.handleCustomClass(stmt as ClassDeclaration)
 
+            if (!isFunction(stmt)) return toString(stmt)
             const _stmt = stmt as FunctionDeclaration
 
             const exportMethodDecorator = isExportMethod(_stmt)
@@ -66,7 +61,7 @@ export class Builder {
         return str
     }
 
-    processStateFile(source: Source): string {
+    protected processStateFile(source: Source): string {
         let importsToAdd: string[] = []
 
         let sourceText = source.statements.map((stmt) => {
@@ -84,7 +79,19 @@ export class Builder {
         return str
     }
 
-    private handleExportMethod(
+    protected processUserFile(source: Source): string {
+        let importsToAdd: string[] = []
+
+        let sourceText = source.statements.map((stmt) => {
+            if (!isClass(stmt)) return toString(stmt)
+            return this.handleCustomClass(stmt as ClassDeclaration)
+        })
+
+        let str = importsToAdd.concat(sourceText.concat(this.sb)).join('\n')
+        return str
+    }
+
+    protected handleExportMethod(
         _stmt: FunctionDeclaration,
         decorators: DecoratorNode,
         indexesUsed: IndexesUsed,
@@ -143,7 +150,7 @@ export class Builder {
         }
     }
 
-    private handleConstructor(_stmt: FunctionDeclaration) {
+    protected handleConstructor(_stmt: FunctionDeclaration) {
         const paramFields = _stmt.signature.parameters.map((field) => toString(field))
         const paramsParserLines = getParamsDecodeLines(paramFields)
         const newLines = `
@@ -154,7 +161,7 @@ export class Builder {
         this.sb[0] = this.sb[0].replace('__constructor-func__', newLines)
     }
 
-    private handleBaseStateClass(stmt: Statement): string {
+    protected handleBaseStateClass(stmt: Statement): string {
         // Remove base functions from base state class
 
         let _stmt = stmt as ClassDeclaration
@@ -170,7 +177,7 @@ export class Builder {
         return classStr
     }
 
-    private handleStateClass(stmt: Statement, importsToAdd: string[]): string {
+    protected handleStateClass(stmt: Statement, importsToAdd: string[]): string {
         let _stmt = stmt as ClassDeclaration
         // Encode func
         const fields = _stmt.members.filter((mem) => isField(mem)).map((field) => toString(field as FieldDeclaration))
@@ -195,7 +202,7 @@ export class Builder {
         return classStr
     }
 
-    private handleCustomClass(stmt: ClassDeclaration) {
+    protected handleCustomClass(stmt: ClassDeclaration) {
         const fields = stmt.members.filter((mem) => isField(mem)).map((field) => toString(field as FieldDeclaration))
         const encodeFunc = getClassEncodeFunc(toString(stmt.name), fields).join('\n')
         const decodeFunc = getClassDecodeFunc(toString(stmt.name), fields).join('\n')

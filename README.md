@@ -23,9 +23,13 @@ the package will process.
 ```
 // @chainfile-index
 ```
-- On the top of the state file 
+- On the top of the state file
 ```
 // @chainfile-state
+```
+- On the top of any other user file
+```
+// @chainfile-user
 ```
 - Use to indicate which class should be used as smart contract state
 ```

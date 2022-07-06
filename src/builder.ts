@@ -1,11 +1,21 @@
-import { Source, FunctionDeclaration, ClassDeclaration, FieldDeclaration, DecoratorNode, Statement } from 'assemblyscript'
+import {
+    Source,
+    FunctionDeclaration,
+    ClassDeclaration,
+    FieldDeclaration,
+    DecoratorNode,
+    Statement,
+    MethodDeclaration,
+} from 'assemblyscript'
 import { toString, isFunction, isClass, isField, isMethod } from './utils.js'
 import { getInvokeImports, getInvokeFunc } from './codegen/invoke/index.js'
-import { encode, decode } from './codegen/state/index.js'
-import { constructorFunc, staticFuncs, getStateFunc } from './codegen/state/index.js'
+import { getStateEncodeFunc, getStateDecodeFunc } from './codegen/state/index.js'
+import { getStateStaticFuncs, getStateImports } from './codegen/state/index.js'
 import { getReturnParser } from './codegen/return/index.js'
 import { getParamsDecodeLines } from './codegen/params/index.js'
 import { BASE_STATE_LOAD_FUNC, BASE_STATE_SAVE_FUNC } from './codegen/constants.js'
+import { getClassDecodeFunc, getClassEncodeFunc, getClassStaticFuncs } from './codegen/classes/index.js'
+import { getConstructor } from './codegen/state/utils.js'
 import {
     isBaseStateClass,
     isConstructorMethod,
@@ -67,7 +77,7 @@ export class Builder {
             if (isBaseStateClass(_stmt)) return this.handleBaseStateClass(stmt)
             if (isStateClass(_stmt)) return this.handleStateClass(stmt, importsToAdd)
 
-            return toString(stmt)
+            return this.handleCustomClass(_stmt)
         })
 
         let str = importsToAdd.concat(sourceText.concat(this.sb)).join('\n')
@@ -164,13 +174,13 @@ export class Builder {
         let _stmt = stmt as ClassDeclaration
         // Encode func
         const fields = _stmt.members.filter((mem) => isField(mem)).map((field) => toString(field as FieldDeclaration))
-        const encodeFunc = encode(fields).join('\n')
-        const decodeFunc = decode(toString(_stmt.name), fields).join('\n')
-        const constFunc = constructorFunc(fields)
-        const defaultFunc = staticFuncs(toString(_stmt.name), fields)
+        const encodeFunc = getStateEncodeFunc(fields).join('\n')
+        const decodeFunc = getStateDecodeFunc(toString(_stmt.name), fields).join('\n')
+        const [constFunc, constSignature] = getConstructor(fields, true)
+        const defaultFunc = getStateStaticFuncs(toString(_stmt.name), fields)
 
         // Base func
-        const [imports, funcs] = getStateFunc(toString(_stmt.name))
+        const imports = getStateImports(toString(_stmt.name))
         importsToAdd.push(imports)
 
         let classStr = toString(stmt)
@@ -180,8 +190,35 @@ export class Builder {
                         ${defaultFunc}
                         ${encodeFunc}
                         ${decodeFunc}
-                        ${funcs}
                     }`
+
+        return classStr
+    }
+
+    private handleCustomClass(stmt: ClassDeclaration) {
+        const fields = stmt.members.filter((mem) => isField(mem)).map((field) => toString(field as FieldDeclaration))
+        const encodeFunc = getClassEncodeFunc(toString(stmt.name), fields).join('\n')
+        const decodeFunc = getClassDecodeFunc(toString(stmt.name), fields).join('\n')
+        const staticFunc = getClassStaticFuncs(toString(stmt.name), fields)
+        const [constFunc, constSignature] = getConstructor(fields, false)
+
+        stmt.members.map((_mem) => {
+            if (isMethod(_mem) && toString(_mem.name) == 'constructor')
+                throw new Error(
+                    `constructor method will be generated automatically, please remove it from class [${toString(
+                        stmt.name
+                    )}]. Its signature will be [${constSignature}]`
+                )
+        })
+
+        let classStr = toString(stmt)
+        classStr = classStr.slice(0, classStr.lastIndexOf('}'))
+        classStr += `
+                ${constFunc}
+                ${staticFunc}
+                ${encodeFunc}
+                ${decodeFunc}
+            }`
 
         return classStr
     }

@@ -1,25 +1,25 @@
-import {getCborEncode} from "../cbor/encoding.js";
+import { getCborEncode } from '../cbor/encoding.js'
 
-export function getReturnParser(funcName:string, returnVarName: string, returnType:string):string{
+export function getReturnParser(funcName: string, returnVarName: string, returnType: string): string {
     let sb: string[] = []
-    sb.push(`function ${funcName}(${returnVarName}: ${returnType}):${returnType === "void" ? "void": "Uint8Array"}{`)
+    sb.push(`function ${funcName}(${returnVarName}: ${returnType}):${returnType === 'void' ? 'void' : 'Uint8Array'}{`)
 
-    switch (returnType){
-        case "CBOREncoder":
+    switch (returnType) {
+        case 'CBOREncoder':
             sb.push(`return Uint8Array.wrap(${returnVarName}.serialize())`)
             break
-        case "Uint8Array":
+        case 'Uint8Array':
             sb.push(`return ${returnVarName}`)
             break
-        case "void":
+        case 'void':
             sb.push(`return`)
             break
         default:
-            sb = sb.concat(getCborEncode([`${returnVarName}:${returnType}`], false))
+            sb = sb.concat(getCborEncode([`${returnVarName}:${returnType}`], ''))
             sb.push(`return Uint8Array.wrap(encoder.serialize())`)
-            break;
+            break
     }
     sb.push(`}`)
 
-    return sb.join("\n")
+    return sb.join('\n')
 }

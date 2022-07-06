@@ -25,6 +25,7 @@
 
 import { Transform } from 'assemblyscript/asc'
 import { Parser, Source } from 'assemblyscript'
+import path from 'path'
 
 import { chainFiles } from './codegen/utils.js'
 import { isEntry, posixRelativePath, toString } from './utils.js'
@@ -49,7 +50,6 @@ export class TransformFVM extends Transform {
         // Visit each file
         files.forEach((source) => {
             if (source.internalPath.includes('index-stub')) return
-            let writeOut = /\/\/.*@chainfile-.*/.test(source.text)
 
             // Remove current source from logs in parser
             parser.donelog.delete(source.internalPath)
@@ -66,9 +66,7 @@ export class TransformFVM extends Transform {
             let [sourceText, isChainFound] = new Builder().build(source)
             if (isChainFound) chainDecoratorFound = true
 
-            if (writeOut) {
-                writeFile(source.normalizedPath + '.source.out', sourceText, baseDir)
-            }
+            writeFile(source.normalizedPath + '.transformed.ts', sourceText, path.join(baseDir, 'build'))
 
             // Parses file and any new imports added to the source
             newParser.parseFile(sourceText, posixRelativePath(isEntry(source) ? '' : './', source.normalizedPath), isEntry(source))
@@ -76,9 +74,7 @@ export class TransformFVM extends Transform {
             // Get our modified source, now parsed by the new parser
             let newSource = newParser.sources.pop()!
 
-            if (writeOut) {
-                writeFile(source.normalizedPath + '.parsed.out', toString(newSource), baseDir)
-            }
+            writeFile(source.normalizedPath + '.parsed.ts', toString(newSource), path.join(baseDir, 'build'))
 
             // Add new modified source to program sources
             this.program.sources.push(newSource)

@@ -1,9 +1,6 @@
 import { Source, FunctionDeclaration, DecoratorNode, ClassDeclaration } from 'assemblyscript'
 import {
     BASE_STATE_DECORATOR,
-    CHAIN_FILE_INDEX_DECORATOR,
-    CHAIN_FILE_STATE_DECORATOR,
-    CHAIN_FILE_USER_DECORATOR,
     CONSTRUCTOR_DECORATOR,
     EXPORT_METHOD_DECORATOR,
     NOT_CHAIN_FILE_DECORATOR,
@@ -12,13 +9,10 @@ import {
 import { isEntry, isUserFile, toString } from '../utils.js'
 
 export const chainFiles = (sources: Source[]): Source[] => sources.filter(hasChainDecorator)
-export const isIndexChainFile = (src: Source): boolean => src.text.includes(CHAIN_FILE_INDEX_DECORATOR)
-export const isStatusChainFile = (src: Source): boolean => src.text.includes(CHAIN_FILE_STATE_DECORATOR)
-export const isUserChainFile = (src: Source): boolean => src.text.includes(CHAIN_FILE_USER_DECORATOR)
 export const isNotChainFile = (src: Source): boolean => src.text.includes(NOT_CHAIN_FILE_DECORATOR)
 
 function hasChainDecorator(src: Source): boolean {
-    return (isEntry(src) || isUserFile(src)) && !isNotChainFile(src)
+    return !isNotChainFile(src) && (isUserFile(src) || (isEntry(src) && src.normalizedPath.includes('assembly/')))
 }
 
 export const isExportMethod = (_stmt: FunctionDeclaration): DecoratorNode | undefined =>

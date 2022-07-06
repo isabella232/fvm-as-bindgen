@@ -19,18 +19,6 @@ yarn build
 These are a series of decorators you should set on your smart contract in order to tag files, functions and classes
 the package will process.
 
-- On the top of the index file
-```
-// @chainfile-index
-```
-- On the top of the state file
-```
-// @chainfile-state
-```
-- On the top of any other user file
-```
-// @chainfile-user
-```
 - Use to indicate which class should be used as smart contract state
 ```
 // @ts-ignore

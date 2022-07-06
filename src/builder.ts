@@ -1,5 +1,5 @@
 import { Source, FunctionDeclaration, ClassDeclaration, FieldDeclaration, DecoratorNode, Statement } from 'assemblyscript'
-import { toString, isFunction, isClass, isField, isMethod } from './utils.js'
+import { toString, isFunction, isClass, isField, isMethod, isEntry } from './utils.js'
 import { getInvokeImports, getInvokeFunc } from './codegen/invoke/index.js'
 import { getStateEncodeFunc, getStateDecodeFunc } from './codegen/state/index.js'
 import { getStateStaticFuncs, getStateImports } from './codegen/state/index.js'
@@ -8,15 +8,7 @@ import { getParamsDecodeLines } from './codegen/params/index.js'
 import { BASE_STATE_LOAD_FUNC, BASE_STATE_SAVE_FUNC } from './codegen/constants.js'
 import { getClassDecodeFunc, getClassEncodeFunc, getClassStaticFuncs } from './codegen/classes/index.js'
 import { getConstructor } from './codegen/state/utils.js'
-import {
-    isBaseStateClass,
-    isConstructorMethod,
-    isExportMethod,
-    isIndexChainFile,
-    isStateClass,
-    isStatusChainFile,
-    isUserChainFile,
-} from './codegen/utils.js'
+import { isBaseStateClass, isConstructorMethod, isExportMethod, isStateClass } from './codegen/utils.js'
 
 type IndexesUsed = { [key: string]: boolean }
 
@@ -27,11 +19,8 @@ export class Builder {
     }
 
     build(source: Source): [string, boolean] {
-        if (isIndexChainFile(source)) return [this.processIndexFile(source), true]
-        if (isStatusChainFile(source)) return [this.processStateFile(source), false]
-        if (isUserChainFile(source)) return [this.processUserFile(source), false]
-
-        return [toString(source), false]
+        if (isEntry(source)) return [this.processIndexFile(source), true]
+        return [this.processUserFile(source), false]
     }
 
     protected processIndexFile(source: Source): string {
@@ -61,7 +50,7 @@ export class Builder {
         return str
     }
 
-    protected processStateFile(source: Source): string {
+    protected processUserFile(source: Source): string {
         let importsToAdd: string[] = []
 
         let sourceText = source.statements.map((stmt) => {
@@ -73,18 +62,6 @@ export class Builder {
             if (isStateClass(_stmt)) return this.handleStateClass(stmt, importsToAdd)
 
             return this.handleCustomClass(_stmt)
-        })
-
-        let str = importsToAdd.concat(sourceText.concat(this.sb)).join('\n')
-        return str
-    }
-
-    protected processUserFile(source: Source): string {
-        let importsToAdd: string[] = []
-
-        let sourceText = source.statements.map((stmt) => {
-            if (!isClass(stmt)) return toString(stmt)
-            return this.handleCustomClass(stmt as ClassDeclaration)
         })
 
         let str = importsToAdd.concat(sourceText.concat(this.sb)).join('\n')

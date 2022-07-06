@@ -1,6 +1,3 @@
-export const CHAIN_FILE_INDEX_DECORATOR = '@chainfile-index'
-export const CHAIN_FILE_STATE_DECORATOR = '@chainfile-state'
-export const CHAIN_FILE_USER_DECORATOR = '@chainfile-user'
 export const NOT_CHAIN_FILE_DECORATOR = '@notchainfile'
 
 export const EXPORT_METHOD_DECORATOR = 'export_method'

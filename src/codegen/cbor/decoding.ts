@@ -1,18 +1,23 @@
+import { ArgumentABI, ParamsType } from '../abi/types.js'
+
 const letters = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's']
 
-export function getCborDecode(fields: string[], entryFieldName: string): string[][] {
+export function getCborDecode(fields: string[], entryFieldName: string): [string[], string[], ArgumentABI[]] {
     const result: string[] = []
+    const paramsAbi: ArgumentABI[] = []
 
-    const fieldsForState: string[] = []
+    const fieldsToCall: string[] = []
     fields.forEach((field, index) => {
-        const [name, typeAndDefault] = field.split(':')
-        const [type, defaultVal] = typeAndDefault.split('=')
-        decodeTypes(result, 'array', entryFieldName, name.trim(), type.trim(), index.toString())
+        const [name, typeAndDefault] = field.split(':').map((val) => val.trim())
+        const [type, defaultValue] = typeAndDefault.split('=').map((val) => val.trim())
 
-        fieldsForState.push(name.trim())
+        decodeTypes(result, 'array', entryFieldName, name, type, index.toString())
+
+        fieldsToCall.push(name)
+        paramsAbi.push({ name, type: type as ParamsType, defaultValue })
     })
 
-    return [result, fieldsForState]
+    return [result, fieldsToCall, paramsAbi]
 }
 
 export function decodeTypes(

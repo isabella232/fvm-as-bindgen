@@ -30,6 +30,8 @@ import path from 'path'
 import { chainFiles } from './codegen/utils.js'
 import { isEntry, posixRelativePath, toString } from './utils.js'
 import { Builder } from './builder.js'
+import { ABI } from './codegen/abi/types.js'
+import { ABI_VERSION } from './codegen/abi/index.js'
 
 export class TransformFVM extends Transform {
     parser: Parser | undefined
@@ -37,6 +39,7 @@ export class TransformFVM extends Transform {
     afterParse(parser: Parser) {
         this.parser = parser
 
+        let abi: ABI = { functions: [], types: [], version: ABI_VERSION }
         const writeFile = this.writeFile
         const baseDir = this.baseDir
 
@@ -63,8 +66,11 @@ export class TransformFVM extends Transform {
             this.program.sources = this.program.sources.filter((_source: Source) => _source !== source)
 
             // Build new Source
-            let [sourceText, isChainFound] = new Builder().build(source)
+            let [funcAbi, typesAbi, sourceText, isChainFound] = new Builder().build(source)
             if (isChainFound) chainDecoratorFound = true
+
+            abi.functions = abi.functions.concat(funcAbi)
+            abi.types = abi.types.concat(typesAbi)
 
             writeFile(source.normalizedPath + '.transformed.ts', sourceText, path.join(baseDir, 'build'))
 
@@ -89,5 +95,7 @@ export class TransformFVM extends Transform {
 
         if (!chainDecoratorFound)
             throw new Error(`chain decorator is missing. Please add "// @chainfile-index" once at the very beginning of the index file.`)
+
+        writeFile('abi.json', JSON.stringify(abi, null, 2), path.join(baseDir, 'build'))
     }
 }

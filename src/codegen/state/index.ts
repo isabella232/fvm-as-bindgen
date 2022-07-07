@@ -8,10 +8,10 @@ export function getStateDecodeFunc(className: string, fields: string[]) {
     result.push(`if( !raw.isArr ) throw new Error("raw state should be an array")`)
     result.push(`let state = (raw as Arr).valueOf()`)
 
-    const [extraLines, fieldsForState] = getCborDecode(fields, 'state')
+    const [extraLines, fieldsToCall, paramsAbi] = getCborDecode(fields, 'state')
     result = result.concat(extraLines)
 
-    result.push(`return new State(${fieldsForState.join(',')})`)
+    result.push(`return new State(${fieldsToCall.join(',')})`)
     result.push('}')
 
     return result
@@ -39,11 +39,11 @@ export const getStateStaticFuncs = (stateClassName: string, fields: string[]): s
     let args = ''
 
     fields.forEach((field) => {
-        const [name, typeAndDefault] = field.split(':')
-        const [type, defaultVal] = typeAndDefault.split('=')
+        const [name, typeAndDefault] = field.split(':').map((val) => val.trim())
+        const [type, defaultVal] = typeAndDefault.split('=').map((val) => val.trim())
 
         let val = defaultVal
-        if (val === undefined) val = getDefaultValue(type.trim())
+        if (val === undefined) val = getDefaultValue(type)
 
         args += `${val}, `
     })

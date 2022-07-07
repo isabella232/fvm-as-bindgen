@@ -1,6 +1,7 @@
 import { getCborEncode } from '../cbor/encoding.js'
+import { ParamsType, ReturnABI } from '../abi/types.js'
 
-export function getReturnParser(funcName: string, returnVarName: string, returnType: string): string {
+export function getReturnParser(funcName: string, returnVarName: string, returnType: string): [string, ReturnABI[]] {
     let sb: string[] = []
     sb.push(`function ${funcName}(${returnVarName}: ${returnType}):${returnType === 'void' ? 'void' : 'Uint8Array'}{`)
 
@@ -21,5 +22,5 @@ export function getReturnParser(funcName: string, returnVarName: string, returnT
     }
     sb.push(`}`)
 
-    return sb.join('\n')
+    return [sb.join('\n'), [{ type: returnType as ParamsType }]]
 }

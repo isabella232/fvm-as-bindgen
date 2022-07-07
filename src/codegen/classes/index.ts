@@ -1,6 +1,7 @@
 import { encodeFields } from '../cbor/encoding.js'
 import { getCborDecode } from '../cbor/decoding.js'
 import { getDefaultValue } from '../state/utils.js'
+import { ArgumentABI } from '../abi/types.js'
 
 export function getClassEncodeFunc(className: string, fields: string[]) {
     let result: string[] = []
@@ -11,19 +12,19 @@ export function getClassEncodeFunc(className: string, fields: string[]) {
     return result
 }
 
-export function getClassDecodeFunc(className: string, fields: string[]) {
+export function getClassDecodeFunc(className: string, fields: string[]): [string[], string[], ArgumentABI[]] {
     let result: string[] = []
     result.push(`static parse(parsedData: Value): ${className} {`)
     result.push(`if( !parsedData.isArr ) throw new Error("serialized data on ${className} should be an array")`)
     result.push(`let values = (parsedData as Arr).valueOf()`)
 
-    const [extraLines, fieldsForState] = getCborDecode(fields, 'values')
+    const [extraLines, fieldsToCall, paramsAbi] = getCborDecode(fields, 'values')
     result = result.concat(extraLines)
 
-    result.push(`return new ${className}(${fieldsForState.join(',')})`)
+    result.push(`return new ${className}(${fieldsToCall.join(',')})`)
     result.push('}')
 
-    return result
+    return [result, fieldsToCall, paramsAbi]
 }
 
 export const getClassStaticFuncs = (stateClassName: string, fields: string[]): string => {

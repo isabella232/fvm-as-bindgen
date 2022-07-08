@@ -1,4 +1,4 @@
-import { FieldABI, FunctionABI, ArgumentABI, ReturnABI } from './types.js'
+import { FieldABI, FunctionABI, ArgumentABI, ReturnABI, ABI } from './types.js'
 
 export const ABI_VERSION = '0.1.0'
 

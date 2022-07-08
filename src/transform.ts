@@ -32,6 +32,7 @@ import { isEntry, posixRelativePath, toString } from './utils.js'
 import { Builder } from './builder.js'
 import { ABI } from './codegen/abi/types.js'
 import { ABI_VERSION } from './codegen/abi/index.js'
+import { genDefinitionFile } from './codegen/abi/typescript.js'
 
 export class TransformFVM extends Transform {
     parser: Parser | undefined
@@ -97,5 +98,6 @@ export class TransformFVM extends Transform {
             throw new Error(`chain decorator is missing. Please add "// @chainfile-index" once at the very beginning of the index file.`)
 
         writeFile('abi.json', JSON.stringify(abi, null, 2), path.join(baseDir, 'build'))
+        writeFile('definition.ts', genDefinitionFile(abi), path.join(baseDir, 'build'))
     }
 }

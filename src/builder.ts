@@ -106,7 +106,7 @@ export class Builder {
                                 }
                             `)
 
-                this.functionsABI.push(generateFuncAbi(_stmt.name.text, paramsAbi, []))
+                this.functionsABI.push(generateFuncAbi(_stmt.name.text, parseInt(indexStr), paramsAbi, []))
 
                 break
             default:
@@ -126,7 +126,7 @@ export class Builder {
                                 ${returnFunc}
                             `)
 
-                this.functionsABI.push(generateFuncAbi(_stmt.name.text, paramsAbi, returnAbi))
+                this.functionsABI.push(generateFuncAbi(_stmt.name.text, parseInt(indexStr), paramsAbi, returnAbi))
 
                 break
         }

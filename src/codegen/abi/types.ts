@@ -13,6 +13,7 @@ export type ArgumentABI = {
 export type FunctionABI = {
     type: 'function'
     name: string
+    index: number
     args: ArgumentABI[]
     return: ReturnABI[]
 }

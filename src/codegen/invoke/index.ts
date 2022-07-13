@@ -35,7 +35,7 @@ export function getInvokeFunc(): string {
             
             // If the method number is not implemented, an error should be retrieved
             default:
-                usrUnhandledMsg()
+                usrUnhandledMsg(methodNum)
                 return NO_DATA_BLOCK_ID
           }
         }

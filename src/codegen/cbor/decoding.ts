@@ -42,7 +42,7 @@ export function decodeTypes(
         result.push(`let ${fieldName} = new Array<${elementType}>()`)
 
         let newIndex = getNewIndexLetter(result, fieldName)
-        result.push(`for(let ${newIndex} = 0; ${newIndex} < ${fieldName}.length; ${newIndex}++){`)
+        result.push(`for(let ${newIndex} = 0; ${newIndex} < ${fieldName}_raw.length; ${newIndex}++){`)
         result.push(`${fieldName}.push(${translateBasicTypes(`${fieldName}_raw`, 'array', newIndex, elementType, true)})`)
         result.push(`}`)
         return

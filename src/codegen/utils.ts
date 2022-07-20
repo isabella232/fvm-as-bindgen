@@ -12,7 +12,10 @@ export const chainFiles = (sources: Source[]): Source[] => sources.filter(hasCha
 export const isNotChainFile = (src: Source): boolean => src.text.includes(NOT_CHAIN_FILE_DECORATOR)
 
 function hasChainDecorator(src: Source): boolean {
-    return !isNotChainFile(src) && (isUserFile(src) || (isEntry(src) && src.normalizedPath.includes('assembly/')))
+    return (
+        !isNotChainFile(src) &&
+        (isUserFile(src) || (isEntry(src) && !src.normalizedPath.startsWith('@') && !src.normalizedPath.startsWith('~')))
+    )
 }
 
 export const isExportMethod = (_stmt: FunctionDeclaration): DecoratorNode | undefined =>

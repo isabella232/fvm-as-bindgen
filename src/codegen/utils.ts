@@ -2,12 +2,14 @@ import { Source, FunctionDeclaration, DecoratorNode, ClassDeclaration } from 'as
 import {
     BASE_STATE_DECORATOR,
     CONSTRUCTOR_DECORATOR,
+    ENABLE_LOG_FLAG,
     EXPORT_METHOD_DECORATOR,
     NOT_CHAIN_FILE_DECORATOR,
     STATE_DECORATOR,
 } from './constants.js'
 import { isEntry, isUserFile, toString } from '../utils.js'
 
+export const enableLogs = (sources: Source[]): boolean => sources.some((src) => src.text.includes(ENABLE_LOG_FLAG))
 export const chainFiles = (sources: Source[]): Source[] => sources.filter(hasChainDecorator)
 export const isNotChainFile = (src: Source): boolean => src.text.includes(NOT_CHAIN_FILE_DECORATOR)
 

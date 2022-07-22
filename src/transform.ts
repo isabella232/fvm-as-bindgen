@@ -27,7 +27,7 @@ import { Transform } from 'assemblyscript/asc'
 import { Parser, Source } from 'assemblyscript'
 import path from 'path'
 
-import { chainFiles } from './codegen/utils.js'
+import { chainFiles, enableLogs } from './codegen/utils.js'
 import { isEntry, posixRelativePath, toString } from './utils.js'
 import { Builder } from './builder.js'
 import { ABI } from './codegen/abi/types.js'
@@ -50,6 +50,7 @@ export class TransformFVM extends Transform {
 
         // Filter for smart contract files
         let files = chainFiles(parser.sources)
+        let isLogEnabled = enableLogs(parser.sources)
 
         // Visit each file
         files.forEach((source) => {
@@ -67,7 +68,7 @@ export class TransformFVM extends Transform {
             this.program.sources = this.program.sources.filter((_source: Source) => _source !== source)
 
             // Build new Source
-            let [funcAbi, typesAbi, sourceText, isChainFound] = new Builder().build(source)
+            let [funcAbi, typesAbi, sourceText, isChainFound] = new Builder(isLogEnabled).build(source)
             if (isChainFound) chainDecoratorFound = true
 
             abi.functions = abi.functions.concat(funcAbi)

@@ -2,9 +2,15 @@ import { getCborDecode } from '../cbor/decoding.js'
 import { getCborEncode } from '../cbor/encoding.js'
 import { getDefaultValue } from './utils.js'
 
-export function getStateDecodeFunc(className: string, fields: string[]) {
+export function getStateDecodeFunc(className: string, fields: string[], enableLogs: boolean) {
     let result: string[] = []
     result.push(`protected parse(raw: Value): ${className} {`)
+
+    if (enableLogs) {
+        result.push('const stateToLog = raw.toString()')
+        result.push('log("Decoded state (obj): [" + stateToLog + "]")')
+    }
+
     result.push(`if( !raw.isArr ) throw new Error("raw state should be an array")`)
     result.push(`let state = (raw as Arr).valueOf()`)
 
@@ -17,23 +23,37 @@ export function getStateDecodeFunc(className: string, fields: string[]) {
     return result
 }
 
-export function getStateEncodeFunc(fields: string[]) {
+export function getStateEncodeFunc(fields: string[], enableLogs: boolean) {
     let result: string[] = []
     result.push(`protected encode(): ArrayBuffer {`)
     result = result.concat(getCborEncode(fields, 'this'))
-    result.push('return encoder.serialize()')
+    result.push('const data = encoder.serialize()')
+
+    if (enableLogs) {
+        result.push('const stateToLog = new CBORDecoder( data ).parse().toString()')
+        result.push('log("Encoded state (obj): [" + stateToLog + "]")')
+        result.push(
+            'log("Encoded state (hex): [" + Uint8Array.wrap(data).reduce((str, byte) => str + byte.toString(16).padStart(2, \'0\'), \'\') + "]")'
+        )
+    }
+
+    result.push('return data')
     result.push('}')
 
     return result
 }
 
-export const getStateStaticFuncs = (stateClassName: string, fields: string[]): string => {
+export const getStateStaticFuncs = (stateClassName: string, fields: string[], enableLogs: boolean): string => {
     const func = `static defaultState(): ${stateClassName} {
-        return new ${stateClassName}( __params__ );
+        ${enableLogs ? 'log("Creating new default state")' : ''}
+        const state = new ${stateClassName}( __params__ );
+        return state
       }
       
       static load(): ${stateClassName} {
-        return State.defaultState().load() as ${stateClassName};
+        ${enableLogs ? 'log("Reading state from storage")' : ''}
+        const state = State.defaultState().load() as ${stateClassName};
+        return state;
       }`
 
     let args = ''

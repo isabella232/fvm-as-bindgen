@@ -3,14 +3,14 @@ import { toString, isFunction, isClass, isField, isMethod, isEntry } from './uti
 import { getInvokeImports, getInvokeFunc } from './codegen/invoke/index.js'
 import { getStateEncodeFunc, getStateDecodeFunc, getStateStaticFuncs } from './codegen/state/index.js'
 import { getReturnParser } from './codegen/return/index.js'
-import { getParamsDecodeLines } from './codegen/params/index.js'
+import { getParamsDecodeLines, getParamsParseLine } from './codegen/params/index.js'
 import { BASE_STATE_LOAD_FUNC, BASE_STATE_SAVE_FUNC } from './codegen/constants.js'
 import { getClassDecodeFunc, getClassEncodeFunc, getClassStaticFuncs } from './codegen/classes/index.js'
 import { getConstructor } from './codegen/state/utils.js'
 import { isBaseStateClass, isConstructorMethod, isExportMethod, isStateClass } from './codegen/utils.js'
 import { getCborImports } from './codegen/cbor/imports.js'
 import { generateFieldAbi, generateFuncAbi } from './codegen/abi/index.js'
-import { ABI, FunctionABI, FieldABI } from './codegen/abi/types.js'
+import { FunctionABI, FieldABI } from './codegen/abi/types.js'
 
 type IndexesUsed = { [key: string]: boolean }
 
@@ -18,6 +18,11 @@ export class Builder {
     sb: string[] = []
     functionsABI: FunctionABI[] = []
     typesABI: FieldABI[] = []
+    enableLog: boolean = false
+
+    constructor(enableLog: boolean) {
+        this.enableLog = enableLog
+    }
 
     build(source: Source): [FunctionABI[], FieldABI[], string, boolean] {
         const newSource = isEntry(source) ? this.processIndexFile(source) : this.processUserFile(source)
@@ -26,8 +31,8 @@ export class Builder {
     }
 
     protected processIndexFile(source: Source): string {
-        this.sb.push(getInvokeFunc())
-        this.sb.push(getInvokeImports())
+        this.sb.push(getInvokeFunc(this.enableLog))
+        this.sb.push(getInvokeImports(this.enableLog))
 
         let invokeCustomMethods: string[] = []
         const indexesUsed: IndexesUsed = {}
@@ -85,10 +90,11 @@ export class Builder {
 
         const funcCall = `__wrapper_${_stmt.name.text}(paramsID)`
         const funcSignature = `__wrapper_${_stmt.name.text}(paramsID: u32)`
-        const returnCall = `__encodeReturn_${_stmt.name.text}`
+        const returnCallName = `__encodeReturn_${_stmt.name.text}`
 
         const paramFields = _stmt.signature.parameters.map((field) => toString(field))
-        const [decodeParamsLines, paramsToCall, paramsAbi] = getParamsDecodeLines(paramFields)
+        const parseParamsLines = getParamsParseLine(this.enableLog)
+        const [decodeParamsLines, paramsToCall, paramsAbi] = getParamsDecodeLines(paramFields, this.enableLog)
 
         const returnTypeStr = toString(_stmt.signature.returnType)
 
@@ -100,7 +106,7 @@ export class Builder {
 
                 this.sb.push(`
                                 function ${funcSignature}:void {
-                                    const decoded = decodeParamsRaw(paramsRaw(paramsID))
+                                    ${parseParamsLines}
                                     ${decodeParamsLines.join('\n')}
                                     ${_stmt.name.text}(${paramsToCall.join(',')})
                                 }
@@ -113,15 +119,14 @@ export class Builder {
                 invokeCustomMethods.push(`const result = ${funcCall}`)
                 invokeCustomMethods.push(`return create(DAG_CBOR, result)`)
 
-                const [returnFunc, returnAbi] = getReturnParser(returnCall, 'result', returnTypeStr)
+                const [returnFunc, returnAbi] = getReturnParser(returnCallName, 'result', returnTypeStr, this.enableLog)
                 this.sb.push(`
                                 function ${funcSignature}:Uint8Array {
-                                    const decoded = decodeParamsRaw(paramsRaw(paramsID))
+                                    ${parseParamsLines}
                                     ${decodeParamsLines.join('\n')}
                                     
                                     const result = ${_stmt.name.text}(${paramsToCall.join(',')})
-                                    
-                                    return ${returnCall}(result) 
+                                    return ${returnCallName}(result) 
                                 }
                                 ${returnFunc}
                             `)
@@ -134,10 +139,10 @@ export class Builder {
 
     protected handleConstructor(_stmt: FunctionDeclaration) {
         const paramFields = _stmt.signature.parameters.map((field) => toString(field))
-        const paramsParserLines = getParamsDecodeLines(paramFields)
+        const [decodeParamsLines, paramsToCall] = getParamsDecodeLines(paramFields, this.enableLog)
         const newLines = `
-                        ${paramsParserLines[0].join('\n')}
-                        ${_stmt.name.text}(${paramsParserLines[1].join(',')})
+                        ${decodeParamsLines.join('\n')}
+                        ${_stmt.name.text}(${paramsToCall.join(',')})
                     `
 
         this.sb[0] = this.sb[0].replace('__constructor-func__', newLines)
@@ -162,12 +167,12 @@ export class Builder {
         let _stmt = stmt as ClassDeclaration
         // Encode func
         const fields = _stmt.members.filter((mem) => isField(mem)).map((field) => toString(field as FieldDeclaration))
-        const encodeFunc = getStateEncodeFunc(fields).join('\n')
-        const decodeFunc = getStateDecodeFunc(toString(_stmt.name), fields).join('\n')
+        const encodeFunc = getStateEncodeFunc(fields, this.enableLog).join('\n')
+        const decodeFunc = getStateDecodeFunc(toString(_stmt.name), fields, this.enableLog).join('\n')
         const [constFunc, constSignature] = getConstructor(fields, true)
-        const defaultFunc = getStateStaticFuncs(toString(_stmt.name), fields)
+        const defaultFunc = getStateStaticFuncs(toString(_stmt.name), fields, this.enableLog)
 
-        const cborImports = getCborImports(toString(_stmt.name))
+        const cborImports = getCborImports(toString(_stmt.name), this.enableLog)
         if (!this.sb.includes(cborImports)) this.sb.push(cborImports)
 
         let classStr = toString(stmt)
@@ -189,7 +194,7 @@ export class Builder {
         const staticFunc = getClassStaticFuncs(toString(stmt.name), fields)
         const [constFunc, constSignature] = getConstructor(fields, false)
 
-        const cborImports = getCborImports(toString(stmt.name))
+        const cborImports = getCborImports(toString(stmt.name), this.enableLog)
         if (!this.sb.includes(cborImports)) this.sb.push(cborImports)
 
         this.typesABI.push(generateFieldAbi(stmt.name.text, paramsAbi))

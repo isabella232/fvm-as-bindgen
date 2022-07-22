@@ -1,4 +1,6 @@
-export function getInvokeImports(): string {
+import { getParamsParseLine } from '../params/index.js'
+
+export function getInvokeImports(enableLogs: boolean): string {
     return `
         import {CBOREncoder} from "@zondax/assemblyscript-cbor/assembly";
         import {NO_DATA_BLOCK_ID, DAG_CBOR} from "@zondax/fvm-as-sdk/assembly/env";
@@ -6,15 +8,18 @@ export function getInvokeImports(): string {
         import {isConstructorCaller} from "@zondax/fvm-as-sdk/assembly/helpers";
         import {decodeParamsRaw} from "@zondax/fvm-as-sdk/assembly/utils/params";
         import {Value, Arr, Str, Integer, Obj, Float, Bytes} from "@zondax/assemblyscript-cbor/assembly/types"
+        ${enableLogs ? 'import {log} from "@zondax/fvm-as-sdk/assembly/wrappers"' : ''}
     `
 }
 
-export function getInvokeFunc(): string {
+export function getInvokeFunc(enableLogs: boolean): string {
     const baseFunc = `
         export function invoke(paramsID: u32): u32 {
     
           // Read invoked method number
           const methodNum = u32(methodNumber())
+        
+          ${enableLogs ? 'log("Method number called: [" + methodNum.toString() + "]")' : ''}
         
           switch (methodNum) {
             // Method number 1 is fixe for create actor command
@@ -23,7 +28,7 @@ export function getInvokeFunc(): string {
               // Nobody else should call the constructor
               if( !isConstructorCaller() ) return NO_DATA_BLOCK_ID
               
-              const decoded = decodeParamsRaw(paramsRaw(paramsID))
+              ${getParamsParseLine(enableLogs)}
               
               // Call constructor func.
               __constructor-func__

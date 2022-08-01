@@ -1,5 +1,13 @@
-import { Source, FunctionDeclaration, ClassDeclaration, FieldDeclaration, DecoratorNode, Statement } from 'assemblyscript'
-import { toString, isFunction, isClass, isField, isMethod, isEntry } from './utils.js'
+import {
+    Source,
+    FunctionDeclaration,
+    ClassDeclaration,
+    FieldDeclaration,
+    DecoratorNode,
+    Statement,
+    PropertyAccessExpression,
+} from 'assemblyscript'
+import { toString, isFunction, isClass, isField, isMethod, isEntry, isPropertyAccess } from './utils.js'
 import { getInvokeImports, getInvokeFunc } from './codegen/invoke/index.js'
 import { getStateEncodeFunc, getStateDecodeFunc, getStateStaticFuncs } from './codegen/state/index.js'
 import { getReturnParser } from './codegen/return/index.js'
@@ -79,11 +87,11 @@ export class Builder {
     ) {
         const { args } = decorators
 
-        if (!args || args.length > 1 || isNaN(parseInt(toString(args[0]))))
-            throw new Error('export_method decorator requires only one integer value as argument')
+        if (!args || args.length > 1 || (isNaN(parseInt(toString(args[0]))) && !isPropertyAccess(args[0])))
+            throw new Error('export_method decorator requires only one integer or one enum value as argument')
 
         const indexStr = toString(args[0])
-        if (parseInt(indexStr) < 2) throw new Error('export_method decorator index should be higher than 1')
+        if (!isNaN(parseInt(indexStr)) && parseInt(indexStr) < 2) throw new Error('export_method decorator index should be higher than 1')
         if (indexesUsed[indexStr]) throw new Error(`export_method decorator index ${indexStr} is duplicated`)
 
         indexesUsed[indexStr] = true

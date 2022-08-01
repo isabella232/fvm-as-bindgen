@@ -7,6 +7,10 @@ export const isUserFile = (source: Source | Node): boolean => source.range.sourc
 
 export const isClass = (type: Node): boolean => type.kind == NodeKind.CLASSDECLARATION
 
+export const isIdentifier = (type: Node): boolean => type.kind == NodeKind.IDENTIFIER
+
+export const isPropertyAccess = (type: Node): boolean => type.kind == NodeKind.PROPERTYACCESS
+
 export const isFunction = (type: Node): boolean => type.kind == NodeKind.FUNCTIONDECLARATION
 
 export const isMethod = (type: Node): boolean => type.kind == NodeKind.METHODDECLARATION

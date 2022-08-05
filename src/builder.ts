@@ -17,7 +17,7 @@ import { getClassDecodeFunc, getClassEncodeFunc, getClassStaticFuncs } from './c
 import { getConstructor } from './codegen/state/utils.js'
 import { isBaseStateClass, isConstructorMethod, isExportMethod, isStateClass } from './codegen/utils.js'
 import { getCborImports } from './codegen/cbor/imports.js'
-import { generateFieldAbi, generateFuncAbi } from './codegen/abi/index.js'
+import { generateConstructorAbi, generateFieldAbi, generateFuncAbi } from './codegen/abi/index.js'
 import { FunctionABI, FieldABI } from './codegen/abi/types.js'
 
 type IndexesUsed = { [key: string]: boolean }
@@ -65,7 +65,7 @@ export class Builder {
         })
 
         if (!constructorFound) {
-            this.functionsABI.push(generateFuncAbi('constructor', parseInt('1'), [], []))
+            this.functionsABI.push(generateConstructorAbi([]))
             this.sb[0] = this.sb[0].replace('__constructor-func__', '')
         }
 
@@ -163,7 +163,7 @@ export class Builder {
                         ${_stmt.name.text}(${paramsToCall.join(',')})
                     `
 
-        this.functionsABI.push(generateFuncAbi(_stmt.name.text, parseInt('1'), paramsAbi, []))
+        this.functionsABI.push(generateConstructorAbi(paramsAbi))
 
         this.sb[0] = this.sb[0].replace('__constructor-func__', newLines)
     }

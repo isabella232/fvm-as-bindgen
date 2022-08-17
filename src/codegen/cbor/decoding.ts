@@ -43,7 +43,14 @@ export function decodeTypes(
 
         let newIndex = getNewIndexLetter(result, fieldName)
         result.push(`for(let ${newIndex} = 0; ${newIndex} < ${fieldName}_raw.length; ${newIndex}++){`)
-        result.push(`${fieldName}.push(${translateBasicTypes(`${fieldName}_raw`, 'array', newIndex, elementType, true)})`)
+
+        let tmp = translateBasicTypes(`${fieldName}_raw`, 'array', newIndex, elementType, true)
+        if (tmp == '') {
+            let accessor = getAccessor(`${fieldName}_raw`, 'array', newIndex, true)
+            tmp = `${elementType}.parse(${accessor})`
+        }
+
+        result.push(`${fieldName}.push(${tmp})`)
         result.push(`}`)
         return
     }
@@ -61,7 +68,14 @@ export function decodeTypes(
         let newIndex = getNewIndexLetter(result, fieldName)
         result.push(`for(let ${newIndex} = 0; ${newIndex} < ${fieldName}_keys.length; ${newIndex}++){`)
         result.push(`let key = ${fieldName}_keys.at(${newIndex}).toString()`)
-        result.push(`${fieldName}.set(key, ${translateBasicTypes(`${fieldName}_raw`, 'object', 'key', valueType, true)})`)
+
+        let tmp = translateBasicTypes(`${fieldName}_raw`, 'object', 'key', valueType, true)
+        if (tmp == '') {
+            let accessor = getAccessor(`${fieldName}_raw`, 'object', 'key', true)
+            tmp = `${valueType}.parse(${accessor})`
+        }
+
+        result.push(`${fieldName}.set(key, ${tmp})`)
         result.push(`}`)
         return
     }

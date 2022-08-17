@@ -102,7 +102,7 @@ export function encodeField(result: string[], type: string, fieldName: string, p
                 return
             }
 
-            result.push(`${type}.encode(encoder, ${fieldAccessor})`)
+            result.push(`${type}.encode(encoder, ${fieldAccessor}${index})`)
             return
 
             throw new Error(`type [${type}] is not supported for encoding`)

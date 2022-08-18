@@ -23,5 +23,8 @@
   "files": [
     "dist",
     "tsconfig.json"
-  ]
+  ],
+  "publishConfig": {
+    "access": "public"
+  }
 }
